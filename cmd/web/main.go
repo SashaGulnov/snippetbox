@@ -7,11 +7,13 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"snippetbox.kirill.ru/internal/models"
 )
 
 type application struct {
 	errorLog *log.Logger
 	infoLog  *log.Logger
+	snippets *models.SnippetModel
 }
 
 func main() {
@@ -37,6 +39,7 @@ func main() {
 	app := &application{
 		errorLog: errorLog,
 		infoLog:  infoLog,
+		snippets: &models.SnippetModel{DB: db},
 	}
 
 	// Use the http.ListenAndServe() function to start a new web server. We pass in
