@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"html/template"
 	"net/http"
 	"snippetbox.kirill.ru/internal/models"
 	"strconv"
@@ -62,8 +63,28 @@ func (app *application) snippetView(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	data := &templateData{Snippet: snippet}
+
+	files := []string{
+		"./ui/html/pages/base.tmpl",
+		"./ui/html/pages/nav.tmpl",
+		"./ui/html/pages/view.tmpl",
+	}
+
+	ts, err := template.ParseFiles(files...)
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	err = ts.ExecuteTemplate(w, "base", data)
+
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
 	//w.Write([]byte("Display a specific snippet..."))
-	fmt.Fprintf(w, "%+v", snippet)
+	//fmt.Fprintf(w, "%+v", snippet)
 }
 
 // Add a snippetCreate handler function.
