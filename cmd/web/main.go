@@ -1,7 +1,9 @@
 package main
 
 import (
+	"database/sql"
 	"flag"
+	_ "github.com/go-sql-driver/mysql"
 	"log"
 	"net/http"
 	"os"
@@ -15,6 +17,8 @@ type application struct {
 func main() {
 	addr := flag.String("addr", ":4000", "HTTP address")
 
+	dsn := flag.String("dsn", "web:web@/snippetbox?parseTime=true", "MySQL data source name")
+
 	flag.Parse()
 
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
@@ -22,6 +26,13 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
 	// Register the two new handler functions and corresponding URL patterns with
 	// the servemux, in exactly the same way that we did before.
+
+	db, err := openDB(*dsn)
+	if err != nil {
+		errorLog.Fatal(err)
+	}
+
+	defer db.Close()
 
 	app := &application{
 		errorLog: errorLog,
@@ -39,18 +50,17 @@ func main() {
 		Handler:  app.routes(),
 	}
 	infoLog.Printf("Starting server on %s", *addr)
-	err := srv.ListenAndServe()
+	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 }
 
-«-- Create a `snippets` table.
-CREATE TABLE snippets (
-id INTEGER NOT NULL PRIMARY KEY AUTO_INCREMENT,
-title VARCHAR(100) NOT NULL,
-content TEXT NOT NULL,
-created DATETIME NOT NULL,
-expires DATETIME NOT NULL
-);
-
--- Add an index on the created column.
-CREATE INDEX idx_snippets_created ON snippets(created);
+func openDB(dsn string) (*sql.DB, error) {
+	db, err := sql.Open("mysql", dsn)
+	if err != nil {
+		return nil, err
+	}
+	if err = db.Ping(); err != nil {
+		return nil, err
+	}
+	return db, nil
+}
